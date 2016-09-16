@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  
+  <head>
+    <title>Shopicruit</title>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <script src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">  
+  </head>
+  
+  <body>
+    <div class="container" style="max-width:500px">
+
+      <div class="page-header">
+        <h1>Shopicruit</h1>
+      </div>
+
+      <div class="panel panel-default">
+        <div class="panel-body">
+
+          <div class="panel panel-default">
+            <div id="console" class="panel-body">
+            </div>
+          </div>
+
+          <div class="container">
+            <div class="row">
+              <div class="col-sm-4">
+                One of three columns
+              </div>
+            </div>
+          </div>
+
+          <div id="productTable">
+            
+          </div>
+
+
+
+          <p> Total Cost of <b>Watches</b> and <b>Clocks:</b> 
+            <input id="totalCost"></input>
+          </p>
+        </div>
+      </div>
+
+      <button class="btn btn-default" style="width:100%" onclick="process()">Calculate</button>
+    </div>
+  </body>
+ 
+<script>
+
+  $("document").ready(function() {
+    var store = {
+      products: {},
+      populate: function(pageNumber) {
+        if (pageNumber == null) {
+          pageNumber = 0;
+        }
+        $.getJSON('http://shopicruit.myshopify.com/products.json?page=' + pageNumber)
+          .then(function(res) {
+            if(res.products.length > 0) {
+                for(product in res.products) {
+
+                  var mini = res.products[product];
+
+                  //If product does not exist
+                  if(!store.products.hasOwnProperty(mini.product_type)) {
+                    store.products[mini.product_type] = {
+                      count : 0,
+                      prices: [],
+                      totalCost: 0
+                    }
+                  }
+
+                  for(variant in mini.variants) {
+                    store.products[mini.product_type].count++;
+                    store.products[mini.product_type].prices.push(mini.variants[variant].price);
+                    store.products[mini.product_type].totalCost += parseFloat(mini.variants[variant].price);
+                  }
+                }
+                pageNumber++;
+                store.populate(pageNumber); //Recursive Call
+              }
+            else {
+              console.log('Fetched ' + pageNumber + ' pages of products');
+              $('<h4>Fetched ' + pageNumber +' pages of products...</h4>').appendTo('#console');
+              calculate();
+            }
+          })
+          .fail(function() {
+            console.log('Failed to get products.');
+          });     
+      }
+    }
+    store.populate(null);
+
+    console.log(store);
+
+    function calculate() {
+      //Get checked checkboxes
+      var types = "";
+
+      $.each(store.products, function(key, value){
+          var newItem = "<label><input type='checkbox' value=" + key + ">" + key + "</label>";
+          types += newItem;  
+      });
+
+      $("#productTable").html(types); //add generated tr html to corresponding table
+    }
+  });
+
+  
+
+      
+</script>
+
+</html>

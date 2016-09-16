@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+  
+  <head>
+    <title>Shopicruit</title>
+
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <script src="https://code.jquery.com/jquery-3.1.0.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">  
+  </head>
+  
+  <body>
+    <div class="container" style="max-width:500px">
+
+      <div class="page-header">
+        <h1>Shopicruit</h1>
+      </div>
+
+      <div class="panel panel-default">
+        <div class="panel-body">
+
+          <div class="progress">
+            <div id="progress" class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100" style="width: 40%">
+            </div>
+          </div>
+
+          <div class="panel panel-default">
+            <div id="console" class="panel-body">
+            </div>
+          </div>
+
+          <p> Total Cost of <b>Watches</b> and <b>Clocks:</b> 
+            <input id="totalCost"></input>
+          </p>
+        </div>
+      </div>
+
+      <button class="btn btn-default" style="width:100%" onclick="process()">Calculate</button>
+    </div>
+  </body>
+ 
+<script>
+  
+  var products = [];
+  var totalCost = 0;
+
+  $("document").ready(function() {
+    process();
+  });
+
+  //Main Process
+  function process() {
+    console.log('*** Fetch Products ***');
+    $('#console').html('<h4>Start!</h4>');
+    $('<h4>Fetching Data...</h4>').appendTo('#console');
+    progressBar(15);
+
+    products = [];
+    totalCost = 0;
+
+    fetchData();
+  }
+
+  //Fetch all data from the Shopicruit JSON EndPoint
+  function fetchData(pageNumber) {
+    if (pageNumber == null) {
+      pageNumber = 0;
+    }
+
+    $.getJSON('http://shopicruit.myshopify.com/products.json?page=' + pageNumber)
+      .then(function(res) {
+        if(res.products.length > 0) {
+            $.merge(products,res.products) //Combining products
+            pageNumber++;
+            fetchData(pageNumber); //Recursive Call
+          }
+        else {
+          console.log('Fetched ' + pageNumber + ' pages of products');
+          $('<h4>Fetched ' + pageNumber +' pages of products...</h4>').appendTo('#console');
+          progressBar(60);
+          calculate();
+        }
+      })
+      .fail(function() {
+        console.log('Failed to get products.');
+      });     
+  };
+
+  //Calculate the total cost of all Watches and Clocks
+  function calculate() {
+
+    console.log('*** Calculate cost of Clocks and Watches ***');
+
+    $('<h4>Calculating...</h4>').appendTo('#console');
+    for (product in products) {
+      var item = products[product];
+      if(item.product_type == "Clock" || item.product_type == "Watch") {
+        //console.log(item);
+        for (variant in item.variants) {
+          var sku = item.variants[variant];
+          totalCost += parseInt(sku.price);
+        }
+      }
+    }
+
+    console.log('Total Cost: ' + '$' + totalCost.toFixed(2));
+    var totalCostString = '$' + totalCost.toFixed(2);
+    
+    $('#totalCost').val(totalCostString);
+    $('<h4>Done!</h4>').appendTo('#console');
+    progressBar(100);
+  }
+
+  //Update the progressbar
+  function progressBar(val) {
+    $('#progress').attr('aria-valuenow', val).css('width',val + '%');
+  }
+      
+</script>
+
+</html>

@@ -9,7 +9,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
    	<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.7/angular.min.js"></script>
-   	<link rel="stylesheet" type="text/css" href="main.css" media="screen" />
 
    	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
 
@@ -19,6 +18,7 @@
   
   <body ng-controller="MainController">
   	
+  	<button ng-click="fetchProducts()"> Get JSON</button>
 
   </body>
  
@@ -26,8 +26,28 @@
 <script>
   var app = angular.module('Shopicruit', []);
 
-	app.controller('MainController', function($scope) {
-	 
+	app.controller('MainController', function($scope,$http) {
+	 	
+    $scope.products = [];
+
+    $scope.fetchProducts = function() {
+      
+        $http({method: 'GET', url: 'http://shopicruit.myshopify.com/products.json?page=1'}).then(function successCallback(res){
+           
+            if(res.data.products.length > 0) {
+              console.log(res.data);
+              angular.merge($scope.products, res.data.products);
+              $scope.fetchProducts();
+              //Merge with fetched products
+            }
+            else {
+              console.log('Fetched All');
+              console.log($scope.products);
+            }
+        });
+      
+    }
+
 
 	});
 </script>
