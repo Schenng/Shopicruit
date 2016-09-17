@@ -16,7 +16,7 @@
     <div class="container" style="max-width:500px">
 
       <div class="page-header">
-        <h1>Shopicruit</h1>
+        <h1>📦 Shopicruit</h1>
       </div>
 
       <div class="panel panel-default">
@@ -27,35 +27,34 @@
             </div>
           </div>
 
-          <div class="container">
-            <div class="row">
-              <div class="col-sm-4">
-                One of three columns
-              </div>
-            </div>
+          <div id="productTable" class="row"> 
           </div>
 
-          <div id="productTable">
-            
-          </div>
+          <button type="button" class="btn btn-default btn-sm" style="width:100%;margin-top:10px" onclick="calculateTotal()">Calculate</button>
+          <hr>
+          <h5>Total Cost of selected items:</h5>
+          <input class="form-control" id="totalCost" placeholder="Cost" style="text-align:right">
 
-
-
-          <p> Total Cost of <b>Watches</b> and <b>Clocks:</b> 
-            <input id="totalCost"></input>
-          </p>
         </div>
       </div>
 
-      <button class="btn btn-default" style="width:100%" onclick="process()">Calculate</button>
     </div>
   </body>
  
 <script>
 
   $("document").ready(function() {
-    var store = {
+    store.populate(null);
+  });
+
+  /* Store Object
+  * Products - Products organized by type
+  * Sku - Total amount of different products (including variations)
+  * Populate - Populate the store with products from a JSON Endpoint*/
+
+  var store = {
       products: {},
+      sku: 0,
       populate: function(pageNumber) {
         if (pageNumber == null) {
           pageNumber = 0;
@@ -67,7 +66,7 @@
 
                   var mini = res.products[product];
 
-                  //If product does not exist
+                  //If product does not exist, create new product
                   if(!store.products.hasOwnProperty(mini.product_type)) {
                     store.products[mini.product_type] = {
                       count : 0,
@@ -76,46 +75,67 @@
                     }
                   }
 
+                  //Add product attributes
                   for(variant in mini.variants) {
+                    store.sku++;
                     store.products[mini.product_type].count++;
                     store.products[mini.product_type].prices.push(mini.variants[variant].price);
                     store.products[mini.product_type].totalCost += parseFloat(mini.variants[variant].price);
                   }
                 }
-                pageNumber++;
+
+                pageNumber++; //Increment the page
                 store.populate(pageNumber); //Recursive Call
               }
+
             else {
               console.log('Fetched ' + pageNumber + ' pages of products');
+              console.log('Found ' + Object.keys(store.products).length + ' different product types');
+              console.log('Found ' + store.sku + ' different products');
+
+
               $('<h4>Fetched ' + pageNumber +' pages of products...</h4>').appendTo('#console');
-              calculate();
+              $('<h4>Found ' + Object.keys(store.products).length +' product types...</h4>').appendTo('#console');
+              $('<h4>Found ' + store.sku +' products...</h4>').appendTo('#console');
+
+              //Create product Checkboxes
+              var types = "";
+              $.each(store.products, function(key, value){
+                  var newItem = "<div class='col-xs-4'><label><input type='checkbox' id=" + key + " value="+ store.products[key].totalCost + "> " + key + "<sub> " + store.products[key].count + "</sub></label></div>";
+                  types += newItem;  
+              });
+
+              $("#productTable").html(types); //add generated tr html to corresponding table
+
+              //Pre-select Clocks and Watches
+              $("input:checkbox[id='Clock']").attr("checked", true);
+              $("input:checkbox[id='Watch']").attr("checked", true);
+
+              calculateTotal();
             }
           })
           .fail(function() {
             console.log('Failed to get products.');
+            $('<h4>*** Error, something went wrong... ***').appendTo('#console');
           });     
       }
-    }
-    store.populate(null);
+  }
 
-    console.log(store);
+  //Calculate the total of the checked items
+  function calculateTotal() {
 
-    function calculate() {
-      //Get checked checkboxes
-      var types = "";
+    //Get checked checkboxes
+    var totalCost = 0;
+    $(':checkbox').each(function (key,property) {
+      if(property.checked == true) {
+        totalCost += parseFloat(property.value);
+      }
+    });
 
-      $.each(store.products, function(key, value){
-          var newItem = "<label><input type='checkbox' value=" + key + ">" + key + "</label>";
-          types += newItem;  
-      });
+    console.log('Total Cost:',totalCost.toFixed(2));
+    $('#totalCost').val('$' + totalCost.toFixed(2));
+  }
 
-      $("#productTable").html(types); //add generated tr html to corresponding table
-    }
-  });
-
-  
-
-      
 </script>
 
 </html>
